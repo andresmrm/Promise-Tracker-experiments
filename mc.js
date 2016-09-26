@@ -48,10 +48,14 @@ $(function () {
         $('#selectField').on('change', function () {
             // set selectvalues options
             var output = ['<option value="none">Nenhum</option>']
-            var answerId = this.value
-            $.each(getSurveyInputById(data, answerId).options, function (i, val) {
-                output.push('<option value="'+ answerId + ',' + i +'">'+ val +'</option>')
-            })
+            if (this.value == 'none') {
+                plotAll(data)}
+            else {
+                var answerId = this.value
+                $.each(getSurveyInputById(data, answerId).options, function (i, val) {
+                    output.push('<option value="'+ answerId + ',' + i +'">'+ val +'</option>')
+                })
+            }
             $('#selectValue').html(output.join(''));
         })
 
@@ -68,6 +72,7 @@ $(function () {
                 newData.responses = data.responses.filter(function (response) {
                     return getAnswerById(response, answerId).value == filterValue
                 })
+                window.f = newData
                 plotAll(newData)
             }
         })
