@@ -11,17 +11,17 @@ $(function () {
     function plotAll(data) {
         var charts = $('#charts')
         charts.html('')
-        $.each(data.survey.inputs, function (i, answer) {
-            var answerId = answer.order
+        $.each(data.survey.inputs, function (i, input) {
+            var answerId = input.id
             var contId = 'container' + answerId
             var contSel = '#' + contId
             var container = '<div id="' + contId +
                 '" style="min-width: 310px; margin: 0 auto"></div>'
             charts.append(container)
-            if (answer.input_type == 'date') {
+            if (input.input_type == 'date') {
                 plotDates(contSel, data, answerId)
-            } else if (answer.input_type == 'select1') {
-                if (answer.options.length <= 2) {
+            } else if (input.input_type == 'select1') {
+                if (input.options.length <= 2) {
                     plotBool(contSel, data, answerId)
                 } else {
                     plotManyOptions(contSel, data, answerId)
@@ -41,16 +41,16 @@ $(function () {
         var output = ['<option value="none">Nenhum</option>']
         $.each(data.survey.inputs, function (i, val) {
             if (val.input_type == "select1")
-                output.push('<option value="'+ val.order +'">'+ val.label +'</option>')
+                output.push('<option value="'+ val.id +'">'+ val.label +'</option>')
         })
         $('#selectField').html(output.join(''));
 
         $('#selectField').on('change', function () {
             // set selectvalues options
             var output = ['<option value="none">Nenhum</option>']
-            var answerIndex = this.value
-            $.each(getSurveyInputByOrder(data, answerIndex).options, function (i, val) {
-                output.push('<option value="'+ answerIndex + ',' + i +'">'+ val +'</option>')
+            var answerId = this.value
+            $.each(getSurveyInputById(data, answerId).options, function (i, val) {
+                output.push('<option value="'+ answerId + ',' + i +'">'+ val +'</option>')
             })
             $('#selectValue').html(output.join(''));
         })
@@ -61,12 +61,12 @@ $(function () {
                 plotAll(data)}
             else {
                 var indexes = this.value.split(',')
-                var answerIndex = parseInt(indexes[0])
+                var answerId = parseInt(indexes[0])
                 var valueIndex = parseInt(indexes[1])
-                var filterValue = getSurveyInputByOrder(data, answerIndex).options[valueIndex]
+                var filterValue = getSurveyInputById(data, answerId).options[valueIndex]
                 var newData = $.extend(true, {}, data)
-                newData.responses = data.responses.filter(function (el) {
-                    return el.answers[answerIndex].value == filterValue
+                newData.responses = data.responses.filter(function (response) {
+                    return getAnswerById(response, answerId).value == filterValue
                 })
                 plotAll(newData)
             }
@@ -78,8 +78,8 @@ $(function () {
 
 
 
-    function plotBool(id, data, answerIndex) {
-        var counts = count(data.responses, answerIndex)
+    function plotBool(id, data, answerId) {
+        var counts = count(data.responses, answerId)
         var values = []
         for (var key in counts) {
             values.push({name: key, y:counts[key]})
@@ -93,7 +93,7 @@ $(function () {
                 type: 'pie'
             },
             title: {
-                text: getSurveyInputByOrder(data, answerIndex).label
+                text: getSurveyInputById(data, answerId).label
             },
 
             series: [{
@@ -104,9 +104,9 @@ $(function () {
         })
     }
 
-    function plotManyOptions(id, data, answerIndex) {
+    function plotManyOptions(id, data, answerId) {
 
-        var counts = count(data.responses, answerIndex)
+        var counts = count(data.responses, answerId)
 
         var categories = []
         var values = []
@@ -121,7 +121,7 @@ $(function () {
                 type: 'bar'
             },
             title: {
-                text: getSurveyInputByOrder(data, answerIndex).label
+                text: getSurveyInputById(data, answerId).label
             },
             xAxis: {
                 categories: categories,
@@ -161,9 +161,9 @@ $(function () {
     }
 
 
-    function plotDates(id, data, answerIndex) {
+    function plotDates(id, data, answerId) {
 
-        var counts = count(data.responses, answerIndex)
+        var counts = count(data.responses, answerId)
         // convert counts to array
         var dates = []
         for (var key in counts) {
@@ -177,7 +177,7 @@ $(function () {
                 type: 'column'
             },
             title: {
-                text: getSurveyInputByOrder(data, answerIndex).label
+                text: getSurveyInputById(data, answerId).label
             },
             // subtitle: {
             //     text: 'Irregular time data in Highcharts JS'
@@ -214,21 +214,27 @@ $(function () {
 
 
 
-    function getSurveyInputByOrder(data, order) {
+    function getSurveyInputById(data, id) {
         for(var i = 0; i< data.survey.inputs.length; i++) {
-            if (data.survey.inputs[i].order == order) return data.survey.inputs[i]
+            if (data.survey.inputs[i].id == id) return data.survey.inputs[i]
+        }
+        return null
+    }
+
+    function getAnswerById(response, id) {
+        for(var i = 0; i< response.answers.length; i++) {
+            if (response.answers[i].id == id) return response.answers[i]
         }
         return null
     }
 
     // count number of registers per date
-    function count(responses, answerIndex) {
+    function count(responses, answerId) {
         var counts = {}
         for(var i = 0; i< responses.length; i++) {
-            var date = responses[i].answers[answerIndex].value
+            var date = getAnswerById(responses[i], answerId).value
             counts[date] = counts[date] ? counts[date]+1 : 1
         }
         return counts
     }
-
 });
