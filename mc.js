@@ -11,7 +11,8 @@ $(function () {
     function plotAll(data) {
         var charts = $('#charts')
         charts.html('')
-        $.each(data.survey.inputs, function (answerId, answer) {
+        $.each(data.survey.inputs, function (i, answer) {
+            var answerId = answer.order
             var contId = 'container' + answerId
             var contSel = '#' + contId
             var container = '<div id="' + contId +
@@ -40,7 +41,7 @@ $(function () {
         var output = ['<option value="none">Nenhum</option>']
         $.each(data.survey.inputs, function (i, val) {
             if (val.input_type == "select1")
-                output.push('<option value="'+ i +'">'+ val.label +'</option>')
+                output.push('<option value="'+ val.order +'">'+ val.label +'</option>')
         })
         $('#selectField').html(output.join(''));
 
@@ -48,7 +49,7 @@ $(function () {
             // set selectvalues options
             var output = ['<option value="none">Nenhum</option>']
             var answerIndex = this.value
-            $.each(data.survey.inputs[answerIndex].options, function (i, val) {
+            $.each(getSurveyInputByOrder(data, answerIndex).options, function (i, val) {
                 output.push('<option value="'+ answerIndex + ',' + i +'">'+ val +'</option>')
             })
             $('#selectValue').html(output.join(''));
@@ -62,7 +63,7 @@ $(function () {
                 var indexes = this.value.split(',')
                 var answerIndex = parseInt(indexes[0])
                 var valueIndex = parseInt(indexes[1])
-                var filterValue = data.survey.inputs[answerIndex].options[valueIndex]
+                var filterValue = getSurveyInputByOrder(data, answerIndex).options[valueIndex]
                 var newData = $.extend(true, {}, data)
                 newData.responses = data.responses.filter(function (el) {
                     return el.answers[answerIndex].value == filterValue
@@ -92,7 +93,7 @@ $(function () {
                 type: 'pie'
             },
             title: {
-                text: data.survey.inputs[answerIndex].label
+                text: getSurveyInputByOrder(data, answerIndex).label
             },
 
             series: [{
@@ -120,7 +121,7 @@ $(function () {
                 type: 'bar'
             },
             title: {
-                text: data.survey.inputs[answerIndex].label
+                text: getSurveyInputByOrder(data, answerIndex).label
             },
             xAxis: {
                 categories: categories,
@@ -170,15 +171,13 @@ $(function () {
         }
         dates.sort(function (a, b) {return a[0] - b[0]})
 
-        console.log($(id))
-        console.log(answerIndex, counts, dates)
         // plot
         $(id).highcharts({
             chart: {
                 type: 'column'
             },
             title: {
-                text: data.survey.inputs[answerIndex].label
+                text: getSurveyInputByOrder(data, answerIndex).label
             },
             // subtitle: {
             //     text: 'Irregular time data in Highcharts JS'
@@ -215,7 +214,12 @@ $(function () {
 
 
 
-
+    function getSurveyInputByOrder(data, order) {
+        for(var i = 0; i< data.survey.inputs.length; i++) {
+            if (data.survey.inputs[i].order == order) return data.survey.inputs[i]
+        }
+        return null
+    }
 
     // count number of registers per date
     function count(responses, answerIndex) {
