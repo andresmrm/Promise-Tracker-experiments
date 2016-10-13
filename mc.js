@@ -30,12 +30,29 @@ $(function () {
         })
     }
 
+    function cleanData(data) {
+        $.each(data.survey.inputs, function (i, input) {
+            if (input.input_type == "select1") {
+                for(var j = 0; j< input.options.length; j++) {
+                    input.options[j] = input.options[j].trim()
+                }
+            }
+        })
+        $.each(data.responses, function (i, response) {
+            $.each(response.answers, function (i, answer) {
+                if (answer.input_type == "select1" && answer.value) {
+                    answer.value = answer.value.trim()
+                }
+            })
+        })
+    }
+
     function dataReceived(json) {
-        console.log(json)
         var data = json.payload
 
-
         window.d = data
+
+        cleanData(data)
 
         // set selectfield options
         var output = ['<option value="none">Nenhum</option>']
@@ -72,7 +89,6 @@ $(function () {
                 newData.responses = data.responses.filter(function (response) {
                     return getAnswerById(response, answerId).value == filterValue
                 })
-                window.f = newData
                 plotAll(newData)
             }
         })
